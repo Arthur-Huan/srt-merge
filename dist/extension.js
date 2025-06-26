@@ -101,7 +101,7 @@ async function mergeSegments(editor, lineNumber) {
     return;
   }
   console.log("SRT format validation for second segment passed");
-  let secondTimestampEndPart = document.lineAt(firstEnd + 2).text.trim().substring(12, 29);
+  let secondTimestampEndPart = document.lineAt(secondStartLineNumber + 1).text.trim().substring(12, 29);
   for (let j = firstEnd + 2; j < secondEnd; j++) {
     const textLine = document.lineAt(j);
     if (!textLine.isEmptyOrWhitespace) {
@@ -119,9 +119,9 @@ async function mergeSegments(editor, lineNumber) {
   const endPosition = new vscode.Position(secondEnd, 0);
   const rangeToReplace = new vscode.Range(startPosition, endPosition);
   const replacementText = newSegmentLines.join("\n") + "\n";
-  const edit = new vscode.WorkspaceEdit();
-  edit.replace(document.uri, rangeToReplace, replacementText);
-  await vscode.workspace.applyEdit(edit);
+  await editor.edit((editBuilder) => {
+    editBuilder.replace(rangeToReplace, replacementText);
+  });
   console.log("Successfully merged SRT segments");
   vscode.window.showInformationMessage("SRT segments merged successfully");
 }

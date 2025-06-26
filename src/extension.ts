@@ -88,7 +88,7 @@ async function mergeSegments(editor: vscode.TextEditor, lineNumber: number): Pro
 		return;
 	}
 	console.log('SRT format validation for second segment passed');
-	let secondTimestampEndPart = document.lineAt(firstEnd + 2).text.trim().substring(12, 29);
+	let secondTimestampEndPart = document.lineAt(secondStartLineNumber+1).text.trim().substring(12, 29);
 	for (let j = firstEnd + 2; j < secondEnd; j++) {
 		const textLine = document.lineAt(j);
 		if (!textLine.isEmptyOrWhitespace) {

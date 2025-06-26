@@ -1,9 +1,6 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import * as path from 'path';
-import * as fs from 'fs';
-import { exec } from 'child_process';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -33,71 +30,37 @@ export function activate(context: vscode.ExtensionContext) {
 
 		// Get the current cursor position
 		const position = editor.selection.active;
-		const lineNumber = position.line + 1; // VS Code uses 0-based indexing, script uses 1-based
-		const filePath = editor.document.fileName;
+		const lineNumber = position.line; // Keep 0-based indexing for VS Code operations
+		const document = editor.document;
 
-		// Get the current workspace folder
-		const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-		if (!workspaceFolder) {
-			vscode.window.showErrorMessage('No workspace folder found');
-			return;
-		}
-
-		// Check if the file has unsaved changes
-		if (editor.document.isDirty) {
-			const save = await vscode.window.showWarningMessage(
-				'File has unsaved changes. Save before deleting line?',
-				'Save and Continue',
-				'Cancel'
-			);
-			if (save === 'Save and Continue') {
-				await editor.document.save();
-			} else {
-				return;
-			}
-		}
-
-		// Run the actual script file
-		const scriptPath = path.join(workspaceFolder.uri.fsPath, 'my-script.sh');
-		
-		// Check if script exists
-		if (!fs.existsSync(scriptPath)) {
-			vscode.window.showErrorMessage(`Script not found: ${scriptPath}`);
-			return;
-		}
-
-		const command = `bash "${scriptPath}" "${filePath}" ${lineNumber}`;
-
-		// Show a progress notification
-		vscode.window.withProgress({
-			location: vscode.ProgressLocation.Notification,
-			title: `Deleting line ${lineNumber}...`,
-			cancellable: false
-		}, async () => {
-			return new Promise<void>((resolve, reject) => {
-				exec(command, { cwd: workspaceFolder.uri.fsPath }, async (error, stdout, stderr) => {
-					if (error) {
-						vscode.window.showErrorMessage(`Script execution failed: ${error.message}`);
-						reject(error);
-						return;
-					}
-
-					if (stderr) {
-						vscode.window.showWarningMessage(`Script warning: ${stderr}`);
-					}
-
-					// Reload the file to show the changes
-					await vscode.commands.executeCommand('workbench.action.files.revert');
-					
-					// Show the output
-					vscode.window.showInformationMessage(`${stdout.trim()}`);
-					resolve();
-				});
+		try {
+			// Show a progress notification
+			await vscode.window.withProgress({
+				location: vscode.ProgressLocation.Notification,
+				title: `Processing line ${lineNumber + 1}...`,
+				cancellable: false
+			}, async () => {
+				// Execute the script logic directly
+				await executeScript(editor, lineNumber);
 			});
-		});
+
+		} catch (error) {
+			vscode.window.showErrorMessage(`Script execution failed: ${error instanceof Error ? error.message : String(error)}`);
+		}
 	});
 
 	context.subscriptions.push(disposable, scriptCommand);
+}
+
+// Execute the main script logic
+async function executeScript(editor: vscode.TextEditor, lineNumber: number): Promise<void> {
+	const document = editor.document;
+	const currentLine = document.lineAt(lineNumber);
+	const filePath = document.fileName;
+	
+	vscode.window.showInformationMessage(`Script executed on line ${lineNumber + 1} in file: ${filePath}`);
+	
+	console.log(`Current line content: "${currentLine.text}"`);
 }
 
 // This method is called when your extension is deactivated

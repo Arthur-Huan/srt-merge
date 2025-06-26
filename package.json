@@ -18,8 +18,8 @@
         "title": "Hello World"
       },
       {
-        "command": "srt-merge.runScript",
-        "title": "Delete Current Line"
+        "command": "srt-merge.mergeSegments",
+        "title": "Merge SRT Segments"
       }
     ],
     "keybindings": [

@@ -35,69 +35,129 @@ __export(extension_exports, {
 });
 module.exports = __toCommonJS(extension_exports);
 var vscode = __toESM(require("vscode"));
-var path = __toESM(require("path"));
-var fs = __toESM(require("fs"));
-var import_child_process = require("child_process");
 function activate(context) {
   console.log('Congratulations, your extension "srt-merge" is now active!');
   const disposable = vscode.commands.registerCommand("srt-merge.helloWorld", () => {
     vscode.window.showInformationMessage("Hello World from Script Shortcut Extension!");
   });
-  const scriptCommand = vscode.commands.registerCommand("srt-merge.runScript", async () => {
+  const scriptCommand = vscode.commands.registerCommand("srt-merge.mergeSegments", async () => {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
       vscode.window.showErrorMessage("No active text editor found");
       return;
     }
-    const position = editor.selection.active;
-    const lineNumber = position.line + 1;
-    const filePath = editor.document.fileName;
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-    if (!workspaceFolder) {
-      vscode.window.showErrorMessage("No workspace folder found");
-      return;
-    }
-    if (editor.document.isDirty) {
-      const save = await vscode.window.showWarningMessage(
-        "File has unsaved changes. Save before deleting line?",
-        "Save and Continue",
-        "Cancel"
-      );
-      if (save === "Save and Continue") {
-        await editor.document.save();
-      } else {
-        return;
-      }
-    }
-    const scriptPath = path.join(workspaceFolder.uri.fsPath, "my-script.sh");
-    if (!fs.existsSync(scriptPath)) {
-      vscode.window.showErrorMessage(`Script not found: ${scriptPath}`);
-      return;
-    }
-    const command = `bash "${scriptPath}" "${filePath}" ${lineNumber}`;
-    vscode.window.withProgress({
-      location: vscode.ProgressLocation.Notification,
-      title: `Deleting line ${lineNumber}...`,
-      cancellable: false
-    }, async () => {
-      return new Promise((resolve, reject) => {
-        (0, import_child_process.exec)(command, { cwd: workspaceFolder.uri.fsPath }, async (error, stdout, stderr) => {
-          if (error) {
-            vscode.window.showErrorMessage(`Script execution failed: ${error.message}`);
-            reject(error);
-            return;
-          }
-          if (stderr) {
-            vscode.window.showWarningMessage(`Script warning: ${stderr}`);
-          }
-          await vscode.commands.executeCommand("workbench.action.files.revert");
-          vscode.window.showInformationMessage(`${stdout.trim()}`);
-          resolve();
-        });
+    const lineNumber = editor.selection.active.line;
+    try {
+      await vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: `Processing line ${lineNumber + 1}...`,
+        cancellable: false
+      }, async () => {
+        await mergeSegments(editor, lineNumber);
       });
-    });
+    } catch (error) {
+      vscode.window.showErrorMessage(`Script execution failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
   });
   context.subscriptions.push(disposable, scriptCommand);
+}
+async function mergeSegments(editor, lineNumber) {
+  const document = editor.document;
+  const currentLine = document.lineAt(lineNumber);
+  let i = lineNumber;
+  let startLineNumber = 0;
+  while (i > 0) {
+    const line = document.lineAt(i);
+    if (line.isEmptyOrWhitespace) {
+      startLineNumber = i + 1;
+      break;
+    }
+    i -= 1;
+  }
+  console.log(`Current cursor position: ${lineNumber + 1}`);
+  console.log(`Start line found: ${startLineNumber + 1}`);
+  let merged_text = "";
+  let firstEnd = validateSRTFormat(document, startLineNumber);
+  if (firstEnd === -1) {
+    const errorMessage = "SRT format not recognized.";
+    console.log(errorMessage);
+    vscode.window.showErrorMessage(errorMessage);
+    return;
+  }
+  console.log("SRT format validation passed");
+  let first_timestamp_initpart = document.lineAt(startLineNumber + 1).text.trim().substring(0, 12);
+  for (let j = startLineNumber + 2; j < firstEnd; j++) {
+    const textLine = document.lineAt(j);
+    if (!textLine.isEmptyOrWhitespace) {
+      merged_text += textLine.text + " ";
+    }
+  }
+  let secondEnd = validateSRTFormat(document, firstEnd);
+  if (secondEnd === -1) {
+    const errorMessage = "SRT format not recognized for the second segment.";
+    console.log(errorMessage);
+    vscode.window.showErrorMessage(errorMessage);
+    return;
+  }
+  console.log("SRT format validation for second segment passed");
+  let second_timestamp_endpart = document.lineAt(firstEnd + 2).text.trim().substring(12, 29);
+  for (let j = firstEnd + 2; j < secondEnd; j++) {
+    const textLine = document.lineAt(j);
+    if (!textLine.isEmptyOrWhitespace) {
+      merged_text += textLine.text + " ";
+    }
+  }
+  const sequenceNumber = document.lineAt(startLineNumber).text.trim();
+  const combinedTimestamp = first_timestamp_initpart + second_timestamp_endpart;
+  const newSegmentLines = [
+    sequenceNumber,
+    combinedTimestamp,
+    merged_text.trim()
+  ];
+  const startPosition = new vscode.Position(startLineNumber, 0);
+  const endPosition = new vscode.Position(secondEnd, 0);
+  const rangeToReplace = new vscode.Range(startPosition, endPosition);
+  const replacementText = newSegmentLines.join("\n") + "\n";
+  const edit = new vscode.WorkspaceEdit();
+  edit.replace(document.uri, rangeToReplace, replacementText);
+  await vscode.workspace.applyEdit(edit);
+  console.log("Successfully merged SRT segments");
+  vscode.window.showInformationMessage("SRT segments merged successfully");
+}
+function validateSRTFormat(document, startLineNumber) {
+  let currentLine = startLineNumber;
+  let validated = -1;
+  while (currentLine <= document.lineCount - 3) {
+    const numberLine = document.lineAt(currentLine);
+    if (!isValidSubtitleNumber(numberLine.text.trim())) {
+      console.log(`Invalid subtitle number at line ${currentLine + 1}: "${numberLine.text}"`);
+      return -1;
+    }
+    currentLine++;
+    const timestampLine = document.lineAt(currentLine);
+    if (!isValidTimestamp(timestampLine.text.trim())) {
+      console.log(`Invalid timestamp at line ${currentLine + 1}: "${timestampLine.text}"`);
+      return -1;
+    }
+    currentLine++;
+    while (currentLine < document.lineCount) {
+      const textLine = document.lineAt(currentLine);
+      if (textLine.isEmptyOrWhitespace) {
+        currentLine++;
+        validated = currentLine;
+        break;
+      }
+      currentLine++;
+    }
+  }
+  return validated;
+}
+function isValidSubtitleNumber(text) {
+  return /^\d+$/.test(text) && parseInt(text) > 0;
+}
+function isValidTimestamp(text) {
+  const timestampPattern = /^\d{2}:\d{2}:\d{2},\d{3}\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}$/;
+  return timestampPattern.test(text);
 }
 function deactivate() {
 }

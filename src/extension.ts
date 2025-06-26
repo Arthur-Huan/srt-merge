@@ -79,7 +79,7 @@ async function mergeSegments(editor: vscode.TextEditor, lineNumber: number): Pro
 		}
 	}
 	
-	let secondStartLineNumber = firstEnd + 1;
+	let secondStartLineNumber = firstEnd;
 	let secondEnd = validateSRTFormat(document, secondStartLineNumber);
 	if (secondEnd === -1) {
 		const errorMessage = 'SRT format not recognized for the second segment starting at line ' + (secondStartLineNumber + 1) + '.';
@@ -115,11 +115,10 @@ async function mergeSegments(editor: vscode.TextEditor, lineNumber: number): Pro
 	// Create the replacement text
 	const replacementText = newSegmentLines.join('\n') + '\n';
 
-	// Apply the edit
-	const edit = new vscode.WorkspaceEdit();
-	edit.replace(document.uri, rangeToReplace, replacementText);
-
-	await vscode.workspace.applyEdit(edit);
+	// Apply the edit using TextEditor.edit() to preserve undo functionality
+	await editor.edit(editBuilder => {
+		editBuilder.replace(rangeToReplace, replacementText);
+	});
 
 	console.log('Successfully merged SRT segments');
 	vscode.window.showInformationMessage('SRT segments merged successfully');
@@ -152,7 +151,7 @@ function validateSRTFormat(document: vscode.TextDocument, startLineNumber: numbe
 			if (textLine.isEmptyOrWhitespace) {
 				currentLine++; // Skip the blank line
 				validated = currentLine; // Valid segment found
-				break;
+				return validated;
 			}
 			currentLine++;
 		}

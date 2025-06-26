@@ -24,10 +24,6 @@
   "contributes": {
     "commands": [
       {
-        "command": "srt-merge.helloWorld",
-        "title": "Hello World"
-      },
-      {
         "command": "srt-merge.mergeSegments",
         "title": "Merge SRT Segments"
       }

@@ -1,13 +1,6 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "srt-merge" is now active!');
 
 	// The command has been defined in the package.json file
@@ -20,18 +13,13 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	// Register the custom script command
-	const scriptCommand = vscode.commands.registerCommand('srt-merge.runScript', async () => {
-		// Get the active text editor
+	const scriptCommand = vscode.commands.registerCommand('srt-merge.mergeSegments', async () => {
 		const editor = vscode.window.activeTextEditor;
 		if (!editor) {
 			vscode.window.showErrorMessage('No active text editor found');
 			return;
 		}
-
-		// Get the current cursor position
-		const position = editor.selection.active;
-		const lineNumber = position.line; // Keep 0-based indexing for VS Code operations
-		const document = editor.document;
+		const lineNumber = editor.selection.active.line; // 0-based indexing
 
 		try {
 			// Show a progress notification
@@ -40,8 +28,8 @@ export function activate(context: vscode.ExtensionContext) {
 				title: `Processing line ${lineNumber + 1}...`,
 				cancellable: false
 			}, async () => {
-				// Execute the script logic directly
-				await executeScript(editor, lineNumber);
+				// Execute main logic to merge segments 
+				await mergeSegments(editor, lineNumber);
 			});
 
 		} catch (error) {
@@ -52,16 +40,84 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(disposable, scriptCommand);
 }
 
-// Execute the main script logic
-async function executeScript(editor: vscode.TextEditor, lineNumber: number): Promise<void> {
+async function mergeSegments(editor: vscode.TextEditor, lineNumber: number): Promise<void> {
 	const document = editor.document;
 	const currentLine = document.lineAt(lineNumber);
-	const filePath = document.fileName;
 	
-	vscode.window.showInformationMessage(`Script executed on line ${lineNumber + 1} in file: ${filePath}`);
+	// Go from current line up until the first line before the first blank line
+	let i = lineNumber;
+	let startLineNumber = 0;
+	// Go up from current line
+	while (i > 0) {
+		const line = document.lineAt(i);
+		if (line.isEmptyOrWhitespace) {
+			startLineNumber = i + 1;
+			break;
+		}
+		i -= 1;
+	}  // If no blank line was encountered, `startLineNumber` stays 0
+
+	// Log the result for debugging, 1-based indexing for user-friendliness
+	console.log(`Current cursor position: ${lineNumber + 1}`);
+	console.log(`Start line found: ${startLineNumber + 1}`);
+
+	// Validate SRT format from startLineNumber onwards for the first segment
+	if (validateSRTFormat(document, startLineNumber) === -1) {
+		const errorMessage = 'SRT format not recognized.';
+		console.log(errorMessage);
+		vscode.window.showErrorMessage(errorMessage);
+		return;
+	}
+	console.log('SRT format validation passed');
+
+	let first_timestamp = document.lineAt(startLineNumber + 1).text.trim().substring(0, 12);
 	
-	console.log(`Current line content: "${currentLine.text}"`);
 }
 
-// This method is called when your extension is deactivated
+function validateSRTFormat(document: vscode.TextDocument, startLineNumber: number): number {
+	let currentLine = startLineNumber;
+	let validated = -1;
+		
+	while (currentLine <= document.lineCount - 3) {
+		// 1. First line should be a number (subtitle index)
+		const numberLine = document.lineAt(currentLine);
+		if (!isValidSubtitleNumber(numberLine.text.trim())) {
+			console.log(`Invalid subtitle number at line ${currentLine + 1}: "${numberLine.text}"`);
+			return -1;
+		}
+		currentLine++;
+		
+		// 2. Second line should be a timestamp
+		const timestampLine = document.lineAt(currentLine);
+		if (!isValidTimestamp(timestampLine.text.trim())) {
+			console.log(`Invalid timestamp at line ${currentLine + 1}: "${timestampLine.text}"`);
+			return -1;
+		}
+		currentLine++;
+		
+		// 3. Read text lines until we hit a blank line or reach the end
+		while (currentLine < document.lineCount) {
+			const textLine = document.lineAt(currentLine);
+			if (textLine.isEmptyOrWhitespace) {
+				currentLine++; // Skip the blank line
+				validated = currentLine; // Valid segment found
+				break;
+			}
+			currentLine++;
+		}
+	}
+	return validated;
+}
+
+function isValidSubtitleNumber(text: string): boolean {
+	// Should be a positive integer
+	return /^\d+$/.test(text) && parseInt(text) > 0;
+}
+
+function isValidTimestamp(text: string): boolean {
+	// Format: HH:MM:SS,mmm --> HH:MM:SS,mmm
+	const timestampPattern = /^\d{2}:\d{2}:\d{2},\d{3}\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}$/;
+	return timestampPattern.test(text);
+}
+
 export function deactivate() {}

@@ -1,71 +1,40 @@
-# srt-merge README
+# SRT Merge Extension
 
-This is the README for your extension "srt-merge". After writing up a brief description, we recommend including the following sections.
+A VS Code extension that allows you to easily merge consecutive SRT subtitle segments with a simple keyboard shortcut.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- **F3 Keyboard Shortcut**: Merge two consecutive SRT subtitle segments instantly
+- **Smart Detection**: Automatically finds the current subtitle segment and the next one
+- **Timestamp Merging**: Combines start time from first segment with end time from second segment
+- **Text Concatenation**: Merges subtitle text from both segments with proper spacing
+- **Error Validation**: Validates SRT format before attempting to merge
 
-For example if there is an image subfolder under your extension project workspace:
+## TODOs
 
-\!\[feature X\]\(images/feature-x.png\)
+- Allow custom keybind for functionality
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+## Usage
+
+1. Open an SRT subtitle file in VS Code
+2. Place your cursor anywhere within the first subtitle segment you want to merge
+3. Press **F3**
+4. The current segment and the next segment will be merged into one
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
-
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
+- VS Code 1.101.0 or higher
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
+### 0.0.1
 
-### 1.0.0
+Initial release of SRT Merge Extension
 
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+**Features:**
+- Merge consecutive SRT subtitle segments with F3
+- Smart SRT format validation  
+- Undo/redo support
+- Automatic timestamp and text merging
 
 ---
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**

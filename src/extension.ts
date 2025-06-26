@@ -60,50 +60,51 @@ async function mergeSegments(editor: vscode.TextEditor, lineNumber: number): Pro
 	console.log(`Current cursor position: ${lineNumber + 1}`);
 	console.log(`Start line found: ${startLineNumber + 1}`);
 
-	let merged_text = '';
+	let mergedText = '';
 	
 	// Validate SRT format from startLineNumber onwards for the first segment
 	let firstEnd = validateSRTFormat(document, startLineNumber);
 	if (firstEnd === -1) {
-		const errorMessage = 'SRT format not recognized.';
+		const errorMessage = 'SRT format not recognized for first segment starting at line ' + (startLineNumber+1) + '.';
 		console.log(errorMessage);
 		vscode.window.showErrorMessage(errorMessage);
 		return;
 	}
 	console.log('SRT format validation passed');
-	let first_timestamp_initpart = document.lineAt(startLineNumber + 1).text.trim().substring(0, 12);
+	let firstTimestampInitPart = document.lineAt(startLineNumber + 1).text.trim().substring(0, 12);
 	for (let j = startLineNumber + 2; j < firstEnd; j++) {
 		const textLine = document.lineAt(j);
 		if (!textLine.isEmptyOrWhitespace) {
-			merged_text += textLine.text + ' ';
+			mergedText += textLine.text + ' ';
 		}
 	}
 	
-	let secondEnd = validateSRTFormat(document, firstEnd);
+	let secondStartLineNumber = firstEnd + 1;
+	let secondEnd = validateSRTFormat(document, secondStartLineNumber);
 	if (secondEnd === -1) {
-		const errorMessage = 'SRT format not recognized for the second segment.';
+		const errorMessage = 'SRT format not recognized for the second segment starting at line ' + (secondStartLineNumber + 1) + '.';
 		console.log(errorMessage);
 		vscode.window.showErrorMessage(errorMessage);
 		return;
 	}
 	console.log('SRT format validation for second segment passed');
-	let second_timestamp_endpart = document.lineAt(firstEnd + 2).text.trim().substring(12, 29);
+	let secondTimestampEndPart = document.lineAt(firstEnd + 2).text.trim().substring(12, 29);
 	for (let j = firstEnd + 2; j < secondEnd; j++) {
 		const textLine = document.lineAt(j);
 		if (!textLine.isEmptyOrWhitespace) {
-			merged_text += textLine.text + ' ';
+			mergedText += textLine.text + ' ';
 		}
 	}
 
 	// Write the combined segment
 	const sequenceNumber = document.lineAt(startLineNumber).text.trim();
-	const combinedTimestamp = first_timestamp_initpart + second_timestamp_endpart;
+	const combinedTimestamp = firstTimestampInitPart + secondTimestampEndPart;
 
 	// Create the new merged segment content
 	const newSegmentLines = [
 		sequenceNumber,
 		combinedTimestamp,
-		merged_text.trim()
+		mergedText.trim()
 	];
 
 	// Calculate the range to replace (from startLineNumber to secondEnd)

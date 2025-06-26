@@ -4,7 +4,7 @@ export function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "srt-merge" is now active!');
 
 	// Register the command to merge SRT segments
-	const scriptCommand = vscode.commands.registerCommand('srt-merge.mergeSegments', async () => {
+	const srtMergeCommand = vscode.commands.registerCommand('srt-merge.mergeSegments', async () => {
 		const editor = vscode.window.activeTextEditor;
 		if (!editor) {
 			vscode.window.showErrorMessage('No active text editor found');
@@ -28,7 +28,7 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	});
 
-	context.subscriptions.push(disposable, scriptCommand);
+	context.subscriptions.push(srtMergeCommand);
 }
 
 async function mergeSegments(editor: vscode.TextEditor, lineNumber: number): Promise<void> {

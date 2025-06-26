@@ -104,7 +104,8 @@ async function mergeSegments(editor: vscode.TextEditor, lineNumber: number): Pro
 	const newSegmentLines = [
 		sequenceNumber,
 		combinedTimestamp,
-		mergedText.trim()
+		mergedText.trim(),
+		'' // Newline to separate segments
 	];
 
 	// Calculate the range to replace (from startLineNumber to secondEnd)

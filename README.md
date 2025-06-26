@@ -27,6 +27,13 @@ A VS Code extension that allows you to easily merge consecutive SRT subtitle seg
 
 ## Release Notes
 
+### 0.0.2
+
+Bugfix release
+
+**Fixed:**
+- Fixed missing blank line between merged segment and next segment
+
 ### 0.0.1
 
 Initial release of SRT Merge Extension

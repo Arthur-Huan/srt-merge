@@ -2,7 +2,7 @@
   "name": "srt-merge",
   "displayName": "SRT Merge",
   "description": "A VS Code extension that allows merging subtitle segments with a shortcut",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "license": "MIT",
   "publisher": "ArthurH",
   "repository": {

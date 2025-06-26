@@ -4,6 +4,16 @@ All notable changes to the "srt-merge" extension will be documented in this file
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [Unreleased]
+## [0.0.2] - 2025-06-26
 
-- Initial release
+### Fixed
+- Fixed missing blank line between merged segment and next segment
+
+## [0.0.1] - Initial Release
+
+### Added
+- Initial release of SRT Merge Extension
+- Merge consecutive SRT subtitle segments with F3 keybinding
+- Smart SRT format validation
+- Undo/redo support
+- Automatic timestamp and text merging

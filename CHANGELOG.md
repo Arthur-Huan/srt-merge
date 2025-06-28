@@ -2,7 +2,10 @@
 
 All notable changes to the "srt-merge" extension will be documented in this file.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+## [0.0.3] - 2025-06-28
+
+- Trim leading and trailing whitespace from subtitle text
+- Improved log messages
 
 ## [0.0.2] - 2025-06-26
 

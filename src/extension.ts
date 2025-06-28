@@ -24,7 +24,8 @@ export function activate(context: vscode.ExtensionContext) {
 			});
 
 		} catch (error) {
-			vscode.window.showErrorMessage(`Script execution failed: ${error instanceof Error ? error.message : String(error)}`);
+			vscode.window.showErrorMessage(
+				`Script execution failed: ${error instanceof Error ? error.message : String(error)}`);
 		}
 	});
 
@@ -61,12 +62,12 @@ async function mergeSegments(editor: vscode.TextEditor, lineNumber: number): Pro
 		vscode.window.showErrorMessage(errorMessage);
 		return;
 	}
-	console.log('SRT format validation passed');
+	console.log(`Validated format for first segment: lines ${startLineNumber + 1} to ${firstEnd + 1}`);
 	let firstTimestampInitPart = document.lineAt(startLineNumber + 1).text.trim().substring(0, 12);
 	for (let j = startLineNumber + 2; j < firstEnd; j++) {
 		const textLine = document.lineAt(j);
 		if (!textLine.isEmptyOrWhitespace) {
-			mergedText += textLine.text + ' ';
+			mergedText += textLine.text.trim() + ' ';
 		}
 	}
 	
@@ -78,12 +79,12 @@ async function mergeSegments(editor: vscode.TextEditor, lineNumber: number): Pro
 		vscode.window.showErrorMessage(errorMessage);
 		return;
 	}
-	console.log('SRT format validation for second segment passed');
+	console.log(`Validated format for second segment: lines ${secondStartLineNumber + 1} to ${secondEnd + 1}`);
 	let secondTimestampEndPart = document.lineAt(secondStartLineNumber+1).text.trim().substring(12, 29);
 	for (let j = firstEnd + 2; j < secondEnd; j++) {
 		const textLine = document.lineAt(j);
 		if (!textLine.isEmptyOrWhitespace) {
-			mergedText += textLine.text + ' ';
+			mergedText += textLine.text.trim() + ' ';
 		}
 	}
 
@@ -112,8 +113,8 @@ async function mergeSegments(editor: vscode.TextEditor, lineNumber: number): Pro
 		editBuilder.replace(rangeToReplace, replacementText);
 	});
 
-	console.log('Successfully merged SRT segments');
-	vscode.window.showInformationMessage('SRT segments merged successfully');
+	console.log(`Merged segments: lines ${startLineNumber + 1} to ${secondEnd + 1}`);
+	vscode.window.showInformationMessage(`Merged segments.`);
 }
 
 function validateSRTFormat(document: vscode.TextDocument, startLineNumber: number): number {
